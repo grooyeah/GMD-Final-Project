@@ -6,7 +6,7 @@
 
 ## Concept Statement
 
-"Dungeon Bonds" is a cooperative, 2D dungeon crawler game that challenges players to navigate procedurally generated dungeons, fight off enemies, and defeat bosses together. With unique spawning points for each player, the game emphasizes exploration, strategy, and teamwork. The thrill of encountering unpredictable levels, coupled with a gamble for a second chance, makes every playthrough exciting and distinct. "Dungeon Bonds" delivers a blend of suspense, action, and cooperative gameplay, making it an engaging experience for players looking to test their combat skills and strategic thinking.
+"Dungeon Bonds" is a fun, 2D te­am game. The map changes e­very time you play. You fight bad guys and make it to the­ end. Sometimes, you ge­t lucky with the start points. You have to look around, make plans, and work as one­ team. Each new leve­l you find is a surprise. You can gamble for an extra life­. This makes it exciting eve­ry time you play. "Dungeon Bonds" mixes fun, thrill, and te­am work. It's great for players who want to see­ how strong they are or how smart their plans are.
 
 ## Genre
 
@@ -14,19 +14,19 @@ The game falls into the Action-Adventure and Roguelike genres, with a strong emp
 
 ## Target Audience
 
-"Dungeon Bonds" is aimed at gamers who enjoy cooperative play, dungeon crawlers, and roguelike games. The game targets players aged 13 and above, appealing to both casual and hardcore gamers who appreciate a challenge, procedural generation, and teamwork.
+"Dungeon Bonds" is for players who like working together, exploring dungeons, and rogue-like game¬s. It's fun for people as young as 13. Casual players and serious gamers both enjoy it. They love the thrill of random levels and working as a team.
 
 ## Unique Selling Points
 
-1. **Dual Player Spawn Points:** Players start from different parts of the dungeon, encouraging exploration and strategy to reunite.
-2. **Procedural Generation:** Infinite replayability with new dungeons, enemies, and items in each level.
-3. **Cooperative Boss Fights:** Bosses only spawn when players reunite, emphasizing teamwork and shared victory.
-4. **Risk and Reward:** The unique gamble for a second chance adds a thrilling twist, making each decision crucial.
-5. **Progressive Difficulty:** As players advance, they face tougher challenges but also gain access to more powerful items and skills.
+1. **Dual Player Spawn Points:** Players begin in different dungeon areas. This encourages them to explore and strategize to meet up.
+2. **Procedural Generation:** Never play the same level twice. Each level brings new dungeons, foes, and loot.
+3. **Cooperative Boss Fights:** Bosses appear only when players meet up. This highlights the importance of teamwork and collective triumph.
+4. **Risk and Reward:** An exciting spin is the option to risk for a second shot, making every move count.
+5. **Progressive Difficulty:** As you move forward, piles up difficulties. But, you can also find stronger items and abilities.
 
 ## Player Experience and Game POV
 
-Players will experience the game from a top-down 2D perspective, emphasizing exploration and combat. The experience is designed to be fast-paced, requiring quick decision-making and strategic thinking. Cooperation is key, as players must work together to navigate dungeons, defeat enemies, and overcome bosses. The game's procedural generation ensures that no two playthroughs are the same, providing a fresh and challenging experience each time.
+In this game, players view from above, it's 2D. Discovering new areas and fighting are big parts. It's a fast game, needing fast choices and strategy. Teamwork matters. You have to join forces to get through dungeons, beat foes, and surpass bosses. Each level's build is new, so every game is different for a new, tough adventure every time.
 
 ## Game World Fiction
 
