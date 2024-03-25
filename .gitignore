@@ -2,6 +2,8 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
+/gmd-final-project/Library/
+/gmd-final-project/Temp/
 /gmd-final-project/[Ll]ibrary/
 /gmd-final-project/[Tt]emp/
 /gmd-final-project/[Oo]bj/
