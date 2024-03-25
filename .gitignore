@@ -70,3 +70,8 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+/gmd-final-project/Temp
+/gmd-final-project/Logs/shadercompiler-UnityShaderCompiler.exe0.log
+/gmd-final-project/Library/ArtifactDB
+/gmd-final-project/Library/ilpp.pid
+/gmd-final-project/Library/EditorInstance.json
