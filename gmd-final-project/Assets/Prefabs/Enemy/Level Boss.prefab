@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 168665879871774482}
   - component: {fileID: 2773286501024810618}
+  - component: {fileID: 7613414040842906260}
   m_Layer: 0
   m_Name: Graphics
   m_TagString: Untagged
@@ -84,6 +85,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &7613414040842906260
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1233173209733656580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8be8b071c3c32064d80b3f337e1ed117, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3085289053108074635
 GameObject:
   m_ObjectHideFlags: 0
@@ -237,12 +250,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7a71bbba3dd9a7409f079f520e0b963, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
-  rotationSpeed: 500
-  patrolTime: 1
-  stopDistance: 8
-  patrolHorizontally: 1
-  graphicsObject: {fileID: 3252548791160182629, guid: 05e4a5b51d988ba4a94004169dfb87a3, type: 3}
+  _speed: 10
+  _rotationSpeed: 500
+  _patrolTime: 2
+  _stopDistance: 5
+  _patrolHorizontally: 1
+  _predictionDistance: 10
+  _graphicsObject: {fileID: 1233173209733656580}
 --- !u!114 &5384435662275054046
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -255,12 +269,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 675aaf3c4fd078141be2b45553600b10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerAwarenessDistance: 15
-  attackCooldown: 1
-  attackDamage: 25
-  pushBackForce: 20
-  attackDistance: 8
-  player: {fileID: 0}
+  _playerAwarenessDistance: 15
+  _attackCooldown: 1
+  _attackDamage: 25
+  _pushBackForce: 500
+  _attackDistance: 2
+  _player: {fileID: 0}
 --- !u!114 &3518230125189108208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -274,3 +288,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _health: 100
+  _maxHealth: 200
