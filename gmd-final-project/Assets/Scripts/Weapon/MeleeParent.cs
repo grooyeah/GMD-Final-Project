@@ -1,6 +1,4 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MeleeParent : MonoBehaviour
@@ -9,10 +7,10 @@ public class MeleeParent : MonoBehaviour
     private Animator animator;
 
     [SerializeField]
-    private Collider2D swordCollider; // Collider for the sword hitbox
+    private Collider2D swordCollider;
 
     [SerializeField]
-    private float pushBackForce = 1000f; // Force to push the enemy back
+    private float pushBackForce = 1000f;
 
     private float delay = 0.3f;
     private bool attackBlocked;
@@ -20,12 +18,7 @@ public class MeleeParent : MonoBehaviour
 
     void Start()
     {
-        swordCollider.enabled = false; // Start with the collider disabled
-    }
-
-    void Update()
-    {
-        // Additional logic if needed
+        swordCollider.enabled = false;
     }
 
     public void Attack()
@@ -36,10 +29,10 @@ public class MeleeParent : MonoBehaviour
         }
 
         animator.SetTrigger("Attack");
-        SoundManager.Instance.PlaySwordWhooshSound();
+        ServiceLocator.Instance.GetService<ISoundManager>().PlaySwordWhooshSound();
         attackBlocked = true;
         isAttacking = true;
-        swordCollider.enabled = true; // Enable the collider at the start of the attack
+        swordCollider.enabled = true;
         StartCoroutine(DelayAttack());
     }
 
@@ -48,20 +41,26 @@ public class MeleeParent : MonoBehaviour
         yield return new WaitForSeconds(delay);
         attackBlocked = false;
         isAttacking = false;
-        swordCollider.enabled = false; // Disable the collider after the attack
+        swordCollider.enabled = false;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (isAttacking && collision.GetComponent<EnemyMovement>())
         {
-            var enemyHealth = collision.GetComponent<Health>();
+            var enemyHealth = collision.GetComponent<IHealth>();
             if (enemyHealth != null && enemyHealth.IsAlive())
             {
-                SoundManager.Instance.PlayEnemyHitSound();
+                ServiceLocator.Instance.GetService<ISoundManager>().PlayEnemyHitSound();
                 enemyHealth.Damage(100);
                 PushBackEnemy(collision.transform);
             }
+        }
+        else if(isAttacking && collision.CompareTag("Objects"))
+        {
+            ServiceLocator.Instance.GetService<ISoundManager>().PlayObjectBreakingSound();
+            ServiceLocator.Instance.GetService<IScoreManager>().AddScore(5);
+            Destroy(collision.gameObject);
         }
     }
 
@@ -69,9 +68,6 @@ public class MeleeParent : MonoBehaviour
     {
         Vector2 pushDirection = (enemyTransform.position - transform.position).normalized;
         EnemyMovement enemyMovement = enemyTransform.GetComponent<EnemyMovement>();
-        if (enemyMovement != null)
-        {
-            enemyMovement.ApplyPushBack(pushDirection, pushBackForce);
-        }
+        enemyMovement?.ApplyPushBack(pushDirection, pushBackForce);
     }
 }

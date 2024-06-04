@@ -1,26 +1,31 @@
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
-    public Button restartButton;
-    public Button gambleButton;
-    public Button headsButton;
-    public Button tailsButton;
-    public TextMeshProUGUI gambleResultText;
-    public GameObject gambleComponent;
-    public GameObject player;
-    public HealthBarManager healthBarManager;
 
-    private string playerChoice;
-    private bool win;
-    public float pushBackRadius = 5f;
-    public float pushBackForce = 20f;
+    [Header("Components")]
+    [SerializeField] public Button _restartButton;
+    [SerializeField] public Button _gambleButton;
+    [SerializeField] public Button _headsButton;
+    [SerializeField] public Button _tailsButton;
+    [SerializeField] public TextMeshProUGUI _gambleResultText;
+    [SerializeField] public GameObject _gambleComponent;
+    [SerializeField] public GameObject _player;
+
+    [Header("Values")]
+    public float _pushBackRadius = 5f;
+    public float _pushBackForce = 20f;
+    
+    private IPlayerHealthBarManager _playerHealthBarManager;
+    private IEnemyHealthBarManager _enemyHealthBarManager;
+    private IScoreManager _scoreManager;
+
+    private string _playerChoice;
+    private bool _win;
 
     private void Awake()
     {
@@ -28,6 +33,7 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            RegisterServices();
         }
         else
         {
@@ -37,54 +43,67 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        restartButton.onClick.AddListener(() =>
+        _restartButton.onClick.AddListener(() =>
         {
             RestartLevel();
-            SoundManager.Instance.PlayUIClickSound();
+            ServiceLocator.Instance.GetService<ISoundManager>().PlayUIClickSound();
         });
 
-        gambleButton.onClick.AddListener(() => 
+        _gambleButton.onClick.AddListener(() =>
         {
             ShowChoiceButtons();
-            SoundManager.Instance.PlayUIClickSound();
-        });
-        headsButton.onClick.AddListener(() =>
-        { 
-            SetPlayerChoice("Heads"); 
-            SoundManager.Instance.PlayUIClickSound(); 
-        });
-        tailsButton.onClick.AddListener(() =>
-        {
-            SetPlayerChoice("Tails");
-            SoundManager.Instance.PlayUIClickSound();
+            ServiceLocator.Instance.GetService<ISoundManager>().PlayUIClickSound();
         });
 
-        restartButton.gameObject.SetActive(false);
-        gambleButton.gameObject.SetActive(false);
-        gambleComponent.SetActive(false);
+        _headsButton.onClick.AddListener(() =>
+        {
+            SetPlayerChoice("Heads");
+            ServiceLocator.Instance.GetService<ISoundManager>().PlayUIClickSound();
+        });
+
+        _tailsButton.onClick.AddListener(() =>
+        {
+            SetPlayerChoice("Tails");
+            ServiceLocator.Instance.GetService<ISoundManager>().PlayUIClickSound();
+        });
+
+        DeactivateButtons();
+        ResetGambleComponent();
+    }
+
+    private void RegisterServices()
+    {
+        ServiceLocator.Instance.RegisterService<IPlayerController>(FindObjectOfType<PlayerController>());
+        ServiceLocator.Instance.RegisterService<ISoundManager>(FindObjectOfType<SoundManager>());
+        ServiceLocator.Instance.RegisterService<IScoreManager>(FindObjectOfType<ScoreManager>());
+        ServiceLocator.Instance.RegisterService<ILevelManager>(FindObjectOfType<LevelManager>());
+        ServiceLocator.Instance.RegisterService<IEnemyHealthBarManager>(FindObjectOfType<EnemyHealthBarManager>());
+        ServiceLocator.Instance.RegisterService<IPlayerHealthBarManager>(FindObjectOfType<PlayerHealthBarManager>());
+
+        _enemyHealthBarManager = ServiceLocator.Instance.GetService<IEnemyHealthBarManager>();
+        _scoreManager = ServiceLocator.Instance.GetService<IScoreManager>();
     }
 
     public void PlayerDied()
     {
-        healthBarManager.HideHealthBars();
-        restartButton.gameObject.SetActive(true);
-        gambleButton.gameObject.SetActive(true);
+        _enemyHealthBarManager.HideHealthBars();
+        _restartButton.gameObject.SetActive(true);
+        _gambleButton.gameObject.SetActive(true);
         Time.timeScale = 0;
     }
 
     private void ShowChoiceButtons()
     {
-        gambleButton.gameObject.SetActive(false);
-        restartButton.gameObject.SetActive(false);
-        gambleComponent.SetActive(true);
+        DeactivateButtons();
+        _gambleComponent.SetActive(true);
     }
 
     private void SetPlayerChoice(string choice)
     {
-        playerChoice = choice;
-        headsButton.gameObject.SetActive(false);
-        tailsButton.gameObject.SetActive(false);
-        SoundManager.Instance.PlayGambleDrumrollSound();
+        _playerChoice = choice;
+        _headsButton.gameObject.SetActive(false);
+        _tailsButton.gameObject.SetActive(false);
+        ServiceLocator.Instance.GetService<ISoundManager>().PlayGambleDrumrollSound();
         StartCoroutine(AnimateGamble());
     }
 
@@ -96,27 +115,26 @@ public class GameManager : MonoBehaviour
 
         while (elapsedTime < animationDuration)
         {
-            gambleResultText.text = options[Random.Range(0, options.Length)];
+            _gambleResultText.text = options[Random.Range(0, options.Length)];
             elapsedTime += 0.1f;
             yield return new WaitForSecondsRealtime(0.1f);
-
         }
 
-        win = (Random.value > 0.5f);
-        string result = win ? "Heads" : "Tails";
-        gambleResultText.text = result;
+        _win = (Random.value > 0.5f);
+        string result = _win ? "Heads" : "Tails";
+        _gambleResultText.text = result;
 
-        if (playerChoice == result)
+        if (_playerChoice == result)
         {
-            SoundManager.Instance.PlayGambleWinSound();
-            gambleResultText.text += "\nYou won! Continue playing.";
+            ServiceLocator.Instance.GetService<ISoundManager>().PlayGambleWinSound();
+            _gambleResultText.text += "\nYou won! Continue playing.";
             Time.timeScale = 1;
             Invoke(nameof(ContinueGame), 1f);
         }
         else
         {
-            SoundManager.Instance.PlayGambleLoseSound();
-            gambleResultText.text += "\nYou lost! Restarting...";
+            ServiceLocator.Instance.GetService<ISoundManager>().PlayGambleLoseSound();
+            _gambleResultText.text += "\nYou lost! Restarting...";
             Time.timeScale = 1;
             Invoke(nameof(RestartLevel), 1f);
         }
@@ -124,10 +142,11 @@ public class GameManager : MonoBehaviour
 
     private void ContinueGame()
     {
+        DeactivateButtons();
         ResetGambleComponent();
         PushBackEnemies();
 
-        Health playerHealth = player.GetComponent<Health>();
+        var playerHealth = _player.GetComponent<IHealth>();
         if (playerHealth != null)
         {
             playerHealth.Heal(50);
@@ -136,16 +155,16 @@ public class GameManager : MonoBehaviour
 
     private void PushBackEnemies()
     {
-        Collider2D[] enemies = Physics2D.OverlapCircleAll(player.transform.position, pushBackRadius);
+        Collider2D[] enemies = Physics2D.OverlapCircleAll(_player.transform.position, _pushBackRadius);
         foreach (Collider2D enemyCollider in enemies)
         {
             if (enemyCollider.CompareTag("Enemy"))
             {
-                Vector2 pushDirection = (enemyCollider.transform.position - player.transform.position).normalized;
+                Vector2 pushDirection = (enemyCollider.transform.position - _player.transform.position).normalized;
                 var enemyMovement = enemyCollider.GetComponent<EnemyMovement>();
                 if (enemyMovement != null)
                 {
-                    enemyMovement.ApplyPushBack(pushDirection, pushBackForce);
+                    enemyMovement.ApplyPushBack(pushDirection, _pushBackForce);
                 }
             }
         }
@@ -153,18 +172,26 @@ public class GameManager : MonoBehaviour
 
     public void RestartLevel()
     {
-        restartButton.gameObject.SetActive(false);
-        gambleButton.gameObject.SetActive(false);
+        _enemyHealthBarManager.ClearHealthBars();
+        DeactivateButtons();
         ResetGambleComponent();
         Time.timeScale = 1;
-        LevelManager.Instance.RestartLevel();
+        ServiceLocator.Instance.GetService<ILevelManager>().RestartLevel();
+        _scoreManager.ResetScore();
+    }
+
+    private void DeactivateButtons()
+    {
+        _restartButton.gameObject.SetActive(false);
+        _gambleButton.gameObject.SetActive(false);
     }
 
     private void ResetGambleComponent()
     {
-        gambleComponent.SetActive(false);
-        gambleResultText.text = "Pick your choice";
-        headsButton.gameObject.SetActive(true);
-        tailsButton.gameObject.SetActive(true);
+        _gambleComponent.SetActive(false);
+        _gambleResultText.text = "Pick your choice";
+        _headsButton.gameObject.SetActive(true);
+        _tailsButton.gameObject.SetActive(true);
     }
 }
+

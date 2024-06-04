@@ -1,42 +1,42 @@
-using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IPlayerController
 {
-    [SerializeField] private float moveSpeed = 10f;
-    [SerializeField] private float rotationSpeed = 10f;
-    [SerializeField] private float pushBackDuration = 0.2f;
-    [SerializeField] private float pushBackSpeed = 20f;
+    [SerializeField] private float _moveSpeed = 10f;
+    [SerializeField] private float _rotationSpeed = 10f;
+    [SerializeField] private float _pushBackDuration = 0.2f;
+    [SerializeField] private float _pushBackSpeed = 20f;
 
-    private Rigidbody2D rb;
-    private Vector2 movementInput;
-    private Vector2 smoothMovementInput;
-    private Vector2 movementInputSmoothVelocity;
-    private MeleeParent meleeParent;
-    private bool isPushedBack;
-    private float pushBackTimer;
-    private Health playerHealth;
-    private Coroutine walkSoundCoroutine;
-    private bool isWalking;
+    private Rigidbody2D _rb;
 
+    private Vector2 _movementInput;
+    private Vector2 _smoothMovementInput;
+    private Vector2 _movementInputSmoothVelocity;
+
+    private MeleeParent _meleeParent;
+    
+    private float _pushBackTimer;
+    private bool _isPushedBack;
+
+    public Transform PlayerTransform => transform;
+    public Rigidbody2D PlayerRigidbody => _rb;
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
-        meleeParent = GetComponentInChildren<MeleeParent>();
-        playerHealth = GetComponent<Health>();
+        _rb = GetComponent<Rigidbody2D>();
+        _meleeParent = GetComponentInChildren<MeleeParent>();
     }
 
     private void FixedUpdate()
     {
-        if (isPushedBack)
+        if (_isPushedBack)
         {
-            pushBackTimer -= Time.deltaTime;
-            if (pushBackTimer <= 0)
+            _pushBackTimer -= Time.deltaTime;
+
+            if (_pushBackTimer <= 0)
             {
-                isPushedBack = false;
+                _isPushedBack = false;
             }
         }
 
@@ -44,85 +44,45 @@ public class PlayerController : MonoBehaviour
         RotateDirectionOnInput();
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if(collision.gameObject.tag.Equals("Enemy"))
-        {
-            playerHealth.Damage(5);
-        }
-        if(collision.gameObject.tag.Equals("Level Boss"))
-        {
-            playerHealth.Damage(10);
-        }
-    }
-
     private void RotateDirectionOnInput()
     {
-        if (movementInput != Vector2.zero)
+        if (_smoothMovementInput != Vector2.zero)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(transform.forward, smoothMovementInput);
-            Quaternion rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-            rb.MoveRotation(rotation);
+            Quaternion targetRotation = Quaternion.LookRotation(transform.forward, _smoothMovementInput);
+            Quaternion rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
+
+            _rb.MoveRotation(rotation);
         }
     }
 
     private void Move()
     {
-        smoothMovementInput = Vector2.SmoothDamp(
-            smoothMovementInput,
-            movementInput,
-            ref movementInputSmoothVelocity,
+        _smoothMovementInput = Vector2.SmoothDamp(
+            _smoothMovementInput,
+            _movementInput,
+            ref _movementInputSmoothVelocity,
             0.1f
         );
 
-        rb.velocity = isPushedBack ? rb.velocity : smoothMovementInput * moveSpeed;
-        HandleWalkingSound();
-    }
-    private void HandleWalkingSound()
-    {
-        if (movementInput != Vector2.zero)
-        {
-            if (walkSoundCoroutine == null)
-            {
-                walkSoundCoroutine = StartCoroutine(PlayWalkingSound());
-            }
-        }
-        else
-        {
-            if (walkSoundCoroutine != null)
-            {
-                StopCoroutine(walkSoundCoroutine);
-                walkSoundCoroutine = null;
-                SoundManager.Instance.StopWalkSound();
-            }
-        }
-    }
-
-    private IEnumerator PlayWalkingSound()
-    {
-        SoundManager.Instance.PlayWalkSound();
-        while (true)
-        {
-            yield return new WaitForSeconds(SoundManager.Instance.walkClip.length);
-            SoundManager.Instance.PlayWalkSound();
-        }
+        _rb.velocity = _isPushedBack ? _rb.velocity : _smoothMovementInput * _moveSpeed;
     }
 
     private void OnMove(InputValue inputValue)
     {
-        movementInput = inputValue.Get<Vector2>();
+        _movementInput = inputValue.Get<Vector2>();
     }
 
     private void OnSwing(InputValue inputValue)
     {
-        meleeParent.Attack();
+        _meleeParent.Attack();
     }
 
     public void ApplyPushBack(Vector2 pushDirection, float pushForce)
     {
-        SoundManager.Instance.PlayPlayerHitSound();
-        isPushedBack = true;
-        pushBackTimer = pushBackDuration;
-        rb.velocity = pushDirection * pushBackSpeed;
+        ServiceLocator.Instance.GetService<ISoundManager>().PlayPlayerHitSound();
+
+        _isPushedBack = true;
+        _pushBackTimer = _pushBackDuration;
+        _rb.velocity = pushDirection * _pushBackSpeed;
     }
 }

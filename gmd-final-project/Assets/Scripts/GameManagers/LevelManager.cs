@@ -2,32 +2,32 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 
-public class LevelManager : MonoBehaviour
+public class LevelManager : MonoBehaviour, ILevelManager
 {
-    public static LevelManager Instance { get; private set; }
+    public static ILevelManager Instance { get; private set; }
 
-    [SerializeField] private GameObject[] levelPrefabs;
-    private int currentLevelIndex = -1;
-    private GameObject currentLevel;
+    [SerializeField] private GameObject[] _levelPrefabs;
+    [SerializeField] private GameObject _portalPrefab;
 
-    public GameObject portalPrefab;
-    private GameObject portal;
+    [SerializeField] private TextMeshProUGUI _levelName;
+    [SerializeField] private TextMeshProUGUI _enemiesAmount;
+    
+    private int _currentLevelIndex = -1;
 
-    private Transform playerSpawnPoint;
-    private Transform portalSpawnPoint;
+    private GameObject _currentLevel;
+    private GameObject _portal;
 
-    [SerializeField] private TextMeshProUGUI levelName;
-    [SerializeField] private TextMeshProUGUI enemiesAmount;
+    private Transform _playerSpawnPoint;
+    private Transform _portalSpawnPoint;
 
-    private int bossesRemaining = 0;
-    private int regularEnemiesRemaining = 0;
+    private int _bossesRemaining = 0;
+    private int _regularEnemiesRemaining = 0;
 
-    private ICollection<GameObject> bosses;
+    private ICollection<GameObject> _bosses;
 
-    private HealthBarManager healthBarManager;
+    private IEnemyHealthBarManager _enemyHealthBarManager;
 
 
     private void Awake()
@@ -36,14 +36,14 @@ public class LevelManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            bosses = new List<GameObject>();
+            _bosses = new List<GameObject>();
         }
         else
         {
             Destroy(gameObject);
         }
 
-        healthBarManager = FindObjectOfType<HealthBarManager>();
+        _enemyHealthBarManager = ServiceLocator.Instance.GetService<IEnemyHealthBarManager>();
     }
 
     private void Start()
@@ -53,55 +53,62 @@ public class LevelManager : MonoBehaviour
 
     public void LoadNextLevel()
     {
-        if (currentLevelIndex >= 0 && currentLevel != null)
+        if (_currentLevelIndex >= 0 && _currentLevel != null)
         {
-            Destroy(currentLevel);
+            Destroy(_currentLevel);
         }
 
-        currentLevelIndex++;
+        _currentLevelIndex++;
 
-        if (currentLevelIndex < levelPrefabs.Length)
+        if (_currentLevelIndex < _levelPrefabs.Length)
         {
-            currentLevel = Instantiate(levelPrefabs[currentLevelIndex]);
+            _currentLevel = Instantiate(_levelPrefabs[_currentLevelIndex]);
             FindSpawnPoints();
             PositionPlayerAtSpawnPoint();
-            Destroy(portal);
+            Destroy(_portal);
             SetLevelNameText();
 
-            // Count the number of regular enemies and bosses in this level
-            var enemies = currentLevel.transform.Find($"Level {currentLevelIndex + 1} Enemies").GetComponentsInChildren<EnemyBehavior>();
-            regularEnemiesRemaining = enemies.Count(e => e.CompareTag("Enemy"));
-            bossesRemaining = enemies.Count(e => e.CompareTag("Level Boss"));
-
-            // Disable bosses at the start
-            foreach (var boss in enemies.Where(e => e.CompareTag("Level Boss")))
-            {
-                bosses.Add(boss.gameObject);
-                boss.gameObject.SetActive(false);
-            }
-            SetEnemiesAmountText();
-
-            StartCoroutine(InitializeHealthBars());
+            InitializeEnemies();
         }
         else
         {
-            Debug.Log("All levels completed!");
+            UIManager.Instance.EndGame();
         }
+    }
+
+    public void endgame()
+    {
+        UIManager.Instance.EndGame();
+    }
+
+    private void InitializeEnemies()
+    {
+        var enemies = _currentLevel.transform.Find($"Level {_currentLevelIndex + 1} Enemies").GetComponentsInChildren<EnemyBehavior>();
+        _regularEnemiesRemaining = enemies.Count(e => e.CompareTag("Enemy"));
+        _bossesRemaining = enemies.Count(e => e.CompareTag("Level Boss"));
+
+        _bosses.Clear();
+        foreach (var boss in enemies.Where(e => e.CompareTag("Level Boss")))
+        {
+            _bosses.Add(boss.gameObject);
+            boss.gameObject.SetActive(false);
+        }
+        SetEnemiesAmountText();
+        StartCoroutine(InitializeHealthBars());
     }
 
     private IEnumerator InitializeHealthBars()
     {
-        // Wait for end of frame to ensure all objects are instantiated and active
         yield return new WaitForEndOfFrame();
-        healthBarManager.InstantiateHealthBars();
+        _enemyHealthBarManager.InstantiateHealthBars();
     }
 
     private void FindSpawnPoints()
     {
-        playerSpawnPoint = currentLevel.transform.Find("Level " + (currentLevelIndex + 1) + " Spawnpoint");
-        portalSpawnPoint = currentLevel.transform.Find("Level " + (currentLevelIndex + 1) + " Portal Spawnpoint");
+        _playerSpawnPoint = _currentLevel.transform.Find("Level " + (_currentLevelIndex + 1) + " Spawnpoint");
+        _portalSpawnPoint = _currentLevel.transform.Find("Level " + (_currentLevelIndex + 1) + " Portal Spawnpoint");
 
-        if (playerSpawnPoint == null || portalSpawnPoint == null)
+        if (_playerSpawnPoint == null || _portalSpawnPoint == null)
         {
             Debug.LogError("Spawn points not found in the level prefab.");
         }
@@ -109,16 +116,16 @@ public class LevelManager : MonoBehaviour
 
     private void PositionPlayerAtSpawnPoint()
     {
-        GameObject player = GameManager.Instance.player;
-        player.transform.position = playerSpawnPoint.position;
+        var player = ServiceLocator.Instance.GetService<IPlayerController>().PlayerTransform.gameObject;
+        player.transform.position = _playerSpawnPoint.position;
     }
 
     public void SpawnPortal()
     {
-        if (bossesRemaining == 0)
+        if (_bossesRemaining == 0)
         {
-            portal = Instantiate(portalPrefab, portalSpawnPoint.position, Quaternion.identity);
-            portal.transform.position = portalSpawnPoint.transform.position;
+            _portal = Instantiate(_portalPrefab, _portalSpawnPoint.position, Quaternion.identity);
+            _portal.transform.position = _portalSpawnPoint.transform.position;
             StartCoroutine(ScalePortal());
         }
     }
@@ -129,56 +136,59 @@ public class LevelManager : MonoBehaviour
         float scalingDuration = 0.5f;
         Vector3 initialScale = Vector3.zero;
         Vector3 targetScale = Vector3.one;
-        SoundManager.Instance.PlayPortalOpenSound();
+        ServiceLocator.Instance.GetService<ISoundManager>().PlayPortalOpenSound();
         while (elapsedTime < scalingDuration)
         {
-            portal.transform.localScale = Vector3.Lerp(initialScale, targetScale, elapsedTime / scalingDuration);
+            _portal.transform.localScale = Vector3.Lerp(initialScale, targetScale, elapsedTime / scalingDuration);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        portal.transform.localScale = targetScale;
+        _portal.transform.localScale = targetScale;
     }
 
     public void RestartLevel()
     {
-        if (currentLevel != null)
+        if (_currentLevel != null)
         {
-            Destroy(currentLevel);
+            Destroy(_currentLevel);
         }
-        GameObject player = GameManager.Instance.player;
-        player.GetComponent<Health>().Heal(100);
-        currentLevel = Instantiate(levelPrefabs[currentLevelIndex]);
+        _enemyHealthBarManager.ClearHealthBars();
+        var player = ServiceLocator.Instance.GetService<IPlayerController>().PlayerTransform.gameObject;
+        player.GetComponent<IHealth>().Heal(100);
+        _currentLevel = Instantiate(_levelPrefabs[_currentLevelIndex]);
         FindSpawnPoints();
         PositionPlayerAtSpawnPoint();
+        InitializeEnemies();
+        ServiceLocator.Instance.GetService<IScoreManager>().ResetScore();
     }
 
     public void SetLevelNameText()
     {
-        levelName.text = currentLevel.name.Replace("(Clone)", "");
+        _levelName.text = _currentLevel.name.Replace("(Clone)", "");
     }
 
     public void SetEnemiesAmountText()
     {
-        if (regularEnemiesRemaining > 0)
+        if (_regularEnemiesRemaining > 0)
         {
-            enemiesAmount.text = $"{regularEnemiesRemaining} enemies left.";
+            _enemiesAmount.text = $"{_regularEnemiesRemaining} enemies left.";
         }
-        else if (regularEnemiesRemaining == 0 && bossesRemaining > 0)
+        else if (_regularEnemiesRemaining == 0 && _bossesRemaining > 0)
         {
-            enemiesAmount.text = $"{bossesRemaining} bosses left.";
+            _enemiesAmount.text = $"{_bossesRemaining} bosses left.";
         }
-        else if (regularEnemiesRemaining == 0 && bossesRemaining == 0)
+        else if (_regularEnemiesRemaining == 0 && _bossesRemaining == 0)
         {
-            enemiesAmount.text = "Level done! Go to the portal.";
+            _enemiesAmount.text = "Level done! Go to the portal.";
         }
     }
 
     public void RegularEnemyDefeated()
     {
-        regularEnemiesRemaining--;
+        _regularEnemiesRemaining--;
         SetEnemiesAmountText();
-        if (regularEnemiesRemaining <= 0)
+        if (_regularEnemiesRemaining <= 0)
         {
             ActivateBosses();
         }
@@ -186,9 +196,9 @@ public class LevelManager : MonoBehaviour
 
     private void ActivateBosses()
     {
-        foreach (var boss in bosses)
+        foreach (var boss in _bosses)
         {
-            if (boss != null) // Ensure the boss object exists
+            if (boss != null)
             {
                 boss.gameObject.SetActive(true);
             }
@@ -198,11 +208,21 @@ public class LevelManager : MonoBehaviour
 
     public void BossDefeated()
     {
-        bossesRemaining--;
-        if (bossesRemaining <= 0)
+        _bossesRemaining--;
+        if (_bossesRemaining <= 0)
         {
             SpawnPortal();
         }
         SetEnemiesAmountText();
+    }
+
+    public void ResetGame()
+    {
+        _currentLevelIndex = -1;
+        ServiceLocator.Instance.GetService<IScoreManager>().ResetScore();
+        var player = ServiceLocator.Instance.GetService<IPlayerController>().PlayerTransform.gameObject;
+        player.GetComponent<IHealth>().Heal(100);
+
+        LoadNextLevel();
     }
 }

@@ -2,127 +2,149 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
-    [SerializeField] private float speed;
-    [SerializeField] private float rotationSpeed;
-    [SerializeField] private float patrolTime = 2f;
-    [SerializeField] private float stopDistance = 5f;
-    [SerializeField] private bool patrolHorizontally = true;
-    [SerializeField] private GameObject graphicsObject;
+    [Header("Components and values")]
+    [SerializeField] private float _speed;
+    [SerializeField] private float _rotationSpeed;
+    [SerializeField] private float _patrolTime = 2f;
+    [SerializeField] private float _stopDistance = 5f;
+    [SerializeField] private bool _patrolHorizontally = true;
+    [SerializeField] private float _predictionDistance = 10f;
+    [SerializeField] private GameObject _graphicsObject;
 
-    private Rigidbody2D rb;
-    private EnemyBehavior enemyBehavior;
-    private Vector2 targetDirection;
-    private float direction = 1f;
-    private float patrolTimer;
-    private bool isPushedBack;
-    private float pushBackDuration = 1f;
-    private float pushBackTimer;
+    private Rigidbody2D _rb;
+    private EnemyBehavior _enemyBehavior;
+    private Vector2 _targetDirection;
+
+    private float _pushBackDuration = 1f;
+    private float _direction = 1f;
+    private float _pushBackTimer;
+    private float _patrolTimer;
+    private bool _isPushedBack;
+
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
-        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        enemyBehavior = GetComponent<EnemyBehavior>();
-        targetDirection = patrolHorizontally ? Vector2.right : Vector2.up;
-        patrolTimer = patrolTime;
+        _rb = GetComponent<Rigidbody2D>();
+        _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        _enemyBehavior = GetComponent<EnemyBehavior>();
+        _targetDirection = _patrolHorizontally ? Vector2.right : Vector2.up;
+        _patrolTimer = _patrolTime;
     }
 
     private void Update()
     {
-        if (!isPushedBack && !enemyBehavior.AwareOfPlayer)
+        if (!_isPushedBack && !_enemyBehavior.AwareOfPlayer)
         {
             Patrol();
         }
 
-        if (isPushedBack)
+        if (_isPushedBack)
         {
-            pushBackTimer -= Time.deltaTime;
-            if (pushBackTimer <= 0)
+            _pushBackTimer -= Time.deltaTime;
+            if (_pushBackTimer <= 0)
             {
-                isPushedBack = false;
-                rb.velocity = Vector2.zero;
+                _isPushedBack = false;
+                _rb.velocity = Vector2.zero;
             }
         }
     }
 
     private void FixedUpdate()
     {
-        if (isPushedBack) return;
+        if (_isPushedBack) return;
 
-        if (enemyBehavior.AwareOfPlayer)
+        if (_enemyBehavior.AwareOfPlayer)
         {
             HandlePlayerTargeting();
         }
         else
         {
-            targetDirection = patrolHorizontally ? Vector2.right * direction : Vector2.up * direction;
-            RotateTowardsTarget();
+            _targetDirection = _patrolHorizontally ? Vector2.right * _direction : Vector2.up * _direction;
+            RotateTowards(transform.position + (Vector3)_targetDirection);
             SetVelocity();
         }
-    }
-
-    private void Patrol()
-    {
-        patrolTimer -= Time.deltaTime;
-        if (patrolTimer <= 0f)
-        {
-            direction *= -1f;
-            patrolTimer = patrolTime;
-        }
-    }
-
-    private void HandlePlayerTargeting()
-    {
-        float distanceToPlayer = Vector2.Distance(transform.position, enemyBehavior.player.position);
-        if (distanceToPlayer > stopDistance)
-        {
-            targetDirection = enemyBehavior.DirectionToPlayer;
-            SetVelocity();
-        }
-        else if (distanceToPlayer <= stopDistance && distanceToPlayer > enemyBehavior.attackDistance)
-        {
-            targetDirection = enemyBehavior.DirectionToPlayer;
-            SetVelocity();
-        }
-        else if (distanceToPlayer <= enemyBehavior.attackDistance)
-        {
-            rb.velocity = Vector2.zero;
-            enemyBehavior.TryAttackPlayer();
-        }
-    }
-
-    private void RotateTowardsTarget()
-    {
-        if (graphicsObject != null)
-        {
-            float angle = Mathf.Atan2(targetDirection.y, targetDirection.x) * Mathf.Rad2Deg - 90;
-            Quaternion targetRotation = Quaternion.AngleAxis(angle, Vector3.forward);
-            graphicsObject.transform.rotation = Quaternion.RotateTowards(
-                graphicsObject.transform.rotation,
-                targetRotation,
-                rotationSpeed * Time.fixedDeltaTime
-            );
-        }
-    }
-
-    private void SetVelocity()
-    {
-        rb.velocity = targetDirection * speed;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.collider.CompareTag("Wall"))
         {
-            direction *= -1f;
-            patrolTimer = patrolTime;
+            _direction *= -1f;
+            _patrolTimer = _patrolTime;
         }
+    }
+
+    private void Patrol()
+    {
+        _patrolTimer -= Time.deltaTime;
+        if (_patrolTimer <= 0f)
+        {
+            _direction *= -1f;
+            _patrolTimer = _patrolTime + Random.Range(-1f, 1f);
+        }
+
+        if (Random.value < 0.1f)
+        {
+            _rb.velocity = Vector2.zero;
+        }
+        else
+        {
+            SetVelocity();
+            RotateTowards(transform.position + (Vector3)_targetDirection);
+        }
+    }
+
+    private void HandlePlayerTargeting()
+    {
+        Vector2 playerVelocity = _enemyBehavior._player.GetComponent<Rigidbody2D>().velocity;
+        Vector2 playerPosition = _enemyBehavior._player.position;
+        float distanceToPlayer = Vector2.Distance(transform.position, playerPosition);
+
+        if (distanceToPlayer > _predictionDistance)
+        {
+            Vector2 futurePosition = playerPosition + playerVelocity * 0.5f;
+            _targetDirection = (futurePosition - (Vector2)transform.position).normalized;
+            RotateTowards(futurePosition);
+        }
+        else if (distanceToPlayer > _stopDistance && distanceToPlayer <= _predictionDistance)
+        {
+            _targetDirection = (playerPosition - (Vector2)transform.position).normalized;
+            RotateTowards(playerPosition);
+        }
+        else if (distanceToPlayer <= _stopDistance)
+        {
+            _rb.velocity = Vector2.zero;
+            RotateTowards(playerPosition);
+            _enemyBehavior.TryAttackPlayer();
+        }
+
+        SetVelocity();
+    }
+
+    private void RotateTowards(Vector2 target)
+    {
+        if (_graphicsObject != null)
+        {
+            Vector2 direction = target - (Vector2)transform.position;
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90;
+            Quaternion targetRotation = Quaternion.AngleAxis(angle, Vector3.forward);
+            _graphicsObject.transform.rotation = Quaternion.RotateTowards(
+                _graphicsObject.transform.rotation,
+                targetRotation,
+                _rotationSpeed * Time.fixedDeltaTime
+            );
+        }
+    }
+
+    private void SetVelocity()
+    {
+        _rb.velocity = _targetDirection * _speed;
     }
 
     public void ApplyPushBack(Vector2 pushDirection, float pushForce)
     {
-        isPushedBack = true;
-        pushBackTimer = pushBackDuration;
-        rb.velocity = pushDirection * pushForce;
+        _isPushedBack = true;
+        _pushBackTimer = _pushBackDuration;
+        _rb.velocity = pushDirection * pushForce;
     }
 }

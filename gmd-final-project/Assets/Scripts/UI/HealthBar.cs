@@ -1,27 +1,28 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class HealthBar : MonoBehaviour
 {
-    public Health targetHealth;
-    private Slider healthSlider;
-    private GameObject healthBarGameObject;
-    private Coroutine hideCoroutine;
+    public IHealth targetHealth;
+    private Slider _healthSlider;
+    private GameObject _healthBarGameObject;
+    private Coroutine _hideCoroutine;
 
     void Awake()
     {
-        healthSlider = GetComponent<Slider>();
-        healthBarGameObject = this.gameObject;
+        _healthSlider = GetComponent<Slider>();
+        _healthBarGameObject = this.gameObject;
     }
 
     void Start()
     {
         if (targetHealth != null)
         {
-            healthSlider.maxValue = targetHealth.GetMaxHealth(); // Ensure max value matches target's max health
+            _healthSlider.maxValue = targetHealth.MaxHealth;
+
             targetHealth.OnHealthChanged += UpdateHealthBar;
+
             Initialize();
         }
         else
@@ -42,8 +43,9 @@ public class HealthBar : MonoBehaviour
     {
         if (targetHealth != null)
         {
-            healthSlider.value = targetHealth.CurrentHealth;
-            healthBarGameObject.SetActive(targetHealth.CompareTag("Player") || targetHealth.CurrentHealth < targetHealth.GetMaxHealth());
+            _healthSlider.value = targetHealth.CurrentHealth;
+
+            _healthBarGameObject.SetActive(targetHealth.Transform.CompareTag("Player") || targetHealth.CurrentHealth < targetHealth.MaxHealth);
 
             targetHealth.OnHealthChanged += UpdateHealthBar;
         }
@@ -53,8 +55,9 @@ public class HealthBar : MonoBehaviour
     {
         if (targetHealth != null)
         {
-            healthSlider.value = targetHealth.CurrentHealth;
-            if (!targetHealth.CompareTag("Player"))
+            _healthSlider.value = targetHealth.CurrentHealth;
+
+            if (!targetHealth.Transform.CompareTag("Player"))
             {
                 ShowHealthBar();
             }
@@ -63,19 +66,19 @@ public class HealthBar : MonoBehaviour
 
     private void ShowHealthBar()
     {
-        healthBarGameObject.SetActive(true);
-        Debug.Log($"{targetHealth.gameObject.name} health bar shown");
-        if (hideCoroutine != null)
+        _healthBarGameObject.SetActive(true);
+
+        if (_hideCoroutine != null)
         {
-            StopCoroutine(hideCoroutine);
+            StopCoroutine(_hideCoroutine);
         }
-        hideCoroutine = StartCoroutine(HideHealthBarDelay());
+
+        _hideCoroutine = StartCoroutine(HideHealthBarDelay());
     }
 
     private IEnumerator HideHealthBarDelay()
     {
         yield return new WaitForSeconds(3);
-        healthBarGameObject.SetActive(false);
-        Debug.Log($"{targetHealth.gameObject.name} health bar hidden");
+        _healthBarGameObject.SetActive(false);
     }
 }

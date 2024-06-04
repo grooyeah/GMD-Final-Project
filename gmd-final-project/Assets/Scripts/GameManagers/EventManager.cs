@@ -1,18 +1,19 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EventManager : MonoBehaviour
 {
     public static EventManager Instance { get; private set; }
 
+    public event Action<IHealth> OnHealthChanged;
+    public event Action OnPlayerDied;
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Keep EventManager alive across scenes
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -20,10 +21,13 @@ public class EventManager : MonoBehaviour
         }
     }
 
-    public event Action<Health> OnHealthChanged;
-
-    public void HealthChanged(Health health)
+    public void HealthChanged(IHealth health)
     {
         OnHealthChanged?.Invoke(health);
+    }
+
+    public void PlayerDied()
+    {
+        OnPlayerDied?.Invoke();
     }
 }

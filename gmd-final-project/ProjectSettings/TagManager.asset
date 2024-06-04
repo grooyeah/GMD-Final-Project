@@ -7,15 +7,16 @@ TagManager:
   - Wall
   - Enemy
   - Level Boss
+  - Objects
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Player
   - Water
   - UI
   - Floor
-  - 
+  - Obstacles
   - 
   - 
   - 

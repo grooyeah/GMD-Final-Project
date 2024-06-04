@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyBehavior : MonoBehaviour
@@ -7,85 +5,107 @@ public class EnemyBehavior : MonoBehaviour
     public bool AwareOfPlayer { get; private set; }
     public Vector2 DirectionToPlayer { get; private set; }
 
-    [SerializeField] private float playerAwarenessDistance;
-    [SerializeField] private float attackCooldown = 1f;
-    [SerializeField] private int attackDamage = 10;
-    [SerializeField] private float pushBackForce = 500f;
-    [SerializeField] public float attackDistance = 2f;
+    [Header("Component Values")]
+    [SerializeField] private float _playerAwarenessDistance;
+    [SerializeField] private float _attackCooldown = 1f;
+    [SerializeField] private int _attackDamage = 10;
+    [SerializeField] private float _pushBackForce = 500f;
+    [SerializeField] public float _attackDistance = 2f;
 
-    private Health enemyHealth;
-    public Transform player; 
-    private float attackTimer;
+    private Health _enemyHealth;
+    public Transform _player; 
+    private float _attackTimer;
 
     private void Awake()
     {
-        player = FindObjectOfType<PlayerController>().transform;
-        enemyHealth = GetComponent<Health>();
-        if (this.gameObject.tag.Equals("Level Boss"))
+        _player = FindObjectOfType<PlayerController>().transform;
+        _enemyHealth = GetComponent<Health>();
+
+        if (CompareTag("Level Boss"))
         {
-            enemyHealth.SetMaxHealth(200);
+            _enemyHealth.SetMaxHealth(200);
         }
     }
 
     private void Update()
     {
-        if (!enemyHealth.IsAlive())
+        if (!_enemyHealth.IsAlive())
         {
-            Debug.Log($"Enemy {gameObject.name} died.");
-
-            if (this.gameObject.tag.Equals("Enemy"))
-            {
-                ScoreManager.Instance.AddScore(10);
-                SoundManager.Instance.PlayEnemyDeathSound();
-                LevelManager.Instance.RegularEnemyDefeated();
-            }
-            else if (this.gameObject.tag.Equals("Level Boss"))
-            {
-                ScoreManager.Instance.AddScore(50);
-                SoundManager.Instance.PlayEnemyDeathSound();
-                LevelManager.Instance.BossDefeated();
-            }
-
-            LevelManager.Instance.SetEnemiesAmountText();
-            Destroy(gameObject);
+            HandleEnemyDeath();
             return;
         }
 
         UpdateAwareness();
-        attackTimer -= Time.deltaTime;
+        _attackTimer -= Time.deltaTime;
     }
 
     private void UpdateAwareness()
     {
-        Vector2 distanceToPlayer = player.position - transform.position;
+        Vector2 distanceToPlayer = _player.position - transform.position;
         DirectionToPlayer = distanceToPlayer.normalized;
-        AwareOfPlayer = distanceToPlayer.magnitude <= playerAwarenessDistance;
+        int layerMask = LayerMask.GetMask("Player", "Obstacles");
+
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, DirectionToPlayer, _playerAwarenessDistance, layerMask);
+
+        Debug.DrawRay(transform.position, DirectionToPlayer * _playerAwarenessDistance, Color.red);
+
+        if (hit.collider != null && hit.collider.CompareTag("Player"))
+        {
+            AwareOfPlayer = true;
+        }
+        else
+        {
+            AwareOfPlayer = false;
+        }
+    }
+
+    private void HandleEnemyDeath()
+    {
+        if (CompareTag("Enemy"))
+        {
+            ScoreManager.Instance.AddScore(10);
+            SoundManager.Instance.PlayEnemyDeathSound();
+            LevelManager.Instance.RegularEnemyDefeated();
+        }
+        else if (CompareTag("Level Boss"))
+        {
+            ScoreManager.Instance.AddScore(50);
+            SoundManager.Instance.PlayEnemyDeathSound();
+            LevelManager.Instance.BossDefeated();
+        }
+
+        LevelManager.Instance.SetEnemiesAmountText();
+        Destroy(gameObject);
     }
 
     public void TryAttackPlayer()
     {
-        if (attackTimer <= 0f && DistanceToPlayer() <= attackDistance)
+        if (_attackTimer <= 0f)
         {
-            SoundManager.Instance.PlayEnemyChargeSound();
-            AttackPlayer();
-            attackTimer = attackCooldown;
+            float distanceToPlayer = DistanceToPlayer();
+
+            if (distanceToPlayer <= _attackDistance)
+            {
+                SoundManager.Instance.PlayEnemyChargeSound();
+                MeleeAttackPlayer();
+                _attackTimer = _attackCooldown;
+            }
         }
     }
 
-    private float DistanceToPlayer()
+    private void MeleeAttackPlayer()
     {
-        return Vector2.Distance(player.position, transform.position);
-    }
-
-    private void AttackPlayer()
-    {
-        var playerHealth = player.GetComponent<Health>();
+        var playerHealth = _player.GetComponent<Health>();
         if (playerHealth != null)
         {
-            playerHealth.Damage(attackDamage);
-            Vector2 pushDirection = (player.position - transform.position).normalized;
-            player.GetComponent<PlayerController>()?.ApplyPushBack(pushDirection, pushBackForce);
+            playerHealth.Damage(_attackDamage);
+            Vector2 pushDirection = (_player.position - transform.position).normalized;
+            _player.GetComponent<PlayerController>()?.ApplyPushBack(pushDirection, _pushBackForce);
         }
+    }
+    private float DistanceToPlayer()
+    {
+        return Vector2.Distance(_player.position, transform.position);
     }
 }
 
