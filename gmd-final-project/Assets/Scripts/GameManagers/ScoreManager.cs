@@ -1,18 +1,47 @@
-using System.Collections;
-using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
-public class ScoreManager : MonoBehaviour
+public class ScoreManager : MonoBehaviour, IScoreManager
 {
-    // Start is called before the first frame update
-    void Start()
+    public static IScoreManager Instance { get; private set; }
+
+    [SerializeField] private TextMeshProUGUI _scoreText;
+
+    private int _score;
+
+    private void Awake()
     {
-        
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Start()
     {
-        
+        _score = 0;
+        UpdateScoreUI();
+    }
+
+    public void AddScore(int amount)
+    {
+        _score += amount;
+        UpdateScoreUI();
+    }
+
+    public void ResetScore()
+    {
+        _score = 0;
+        UpdateScoreUI();
+    }
+
+    private void UpdateScoreUI()
+    {
+        _scoreText.text = "Score: " + _score;
     }
 }

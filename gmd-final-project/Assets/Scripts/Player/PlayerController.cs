@@ -1,61 +1,88 @@
-using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IPlayerController
 {
-    public float moveSpeed = 10f;
-    private Rigidbody2D rb;
-    private bool canMove = true;
+    [SerializeField] private float _moveSpeed = 10f;
+    [SerializeField] private float _rotationSpeed = 10f;
+    [SerializeField] private float _pushBackDuration = 0.2f;
+    [SerializeField] private float _pushBackSpeed = 20f;
+
+    private Rigidbody2D _rb;
+
+    private Vector2 _movementInput;
+    private Vector2 _smoothMovementInput;
+    private Vector2 _movementInputSmoothVelocity;
+
+    private MeleeParent _meleeParent;
+    
+    private float _pushBackTimer;
+    private bool _isPushedBack;
+
+    public Transform PlayerTransform => transform;
+    public Rigidbody2D PlayerRigidbody => _rb;
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
+        _rb = GetComponent<Rigidbody2D>();
+        _meleeParent = GetComponentInChildren<MeleeParent>();
     }
 
-    void Update()
+    private void FixedUpdate()
     {
+        if (_isPushedBack)
+        {
+            _pushBackTimer -= Time.deltaTime;
+
+            if (_pushBackTimer <= 0)
+            {
+                _isPushedBack = false;
+            }
+        }
+
         Move();
+        RotateDirectionOnInput();
+    }
+
+    private void RotateDirectionOnInput()
+    {
+        if (_smoothMovementInput != Vector2.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(transform.forward, _smoothMovementInput);
+            Quaternion rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
+
+            _rb.MoveRotation(rotation);
+        }
     }
 
     private void Move()
     {
-        Vector3 move = Vector3.zero;
-  
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
-            {
-                move.y += moveSpeed * Time.deltaTime;
-            }
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
-            {
-                move.y -= moveSpeed * Time.deltaTime;
-            }
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
-            {
-                move.x -= moveSpeed * Time.deltaTime;
-            }
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
-            {
-                move.x += moveSpeed * Time.deltaTime;
-            }
+        _smoothMovementInput = Vector2.SmoothDamp(
+            _smoothMovementInput,
+            _movementInput,
+            ref _movementInputSmoothVelocity,
+            0.1f
+        );
 
-            transform.position += move;
+        _rb.velocity = _isPushedBack ? _rb.velocity : _smoothMovementInput * _moveSpeed;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void OnMove(InputValue inputValue)
     {
-        if(collision.collider.name.Contains("Walls"))
-        {
-            canMove = false;
-        }
+        _movementInput = inputValue.Get<Vector2>();
     }
 
-    private void OnCollisionExit2D(Collision2D collision)
+    private void OnSwing(InputValue inputValue)
     {
-        if (collision.collider.name.Contains("Walls"))
-        {
-            canMove = true;
-        }
+        _meleeParent.Attack();
     }
 
+    public void ApplyPushBack(Vector2 pushDirection, float pushForce)
+    {
+        ServiceLocator.Instance.GetService<ISoundManager>().PlayPlayerHitSound();
+
+        _isPushedBack = true;
+        _pushBackTimer = _pushBackDuration;
+        _rb.velocity = pushDirection * _pushBackSpeed;
+    }
 }
