@@ -77,6 +77,11 @@ public class PlayerController : MonoBehaviour, IPlayerController
         _meleeParent.Attack();
     }
 
+    private void OnApplicationExit(InputValue inputValue)
+    {
+        Application.Quit();
+    }
+
     public void ApplyPushBack(Vector2 pushDirection, float pushForce)
     {
         ServiceLocator.Instance.GetService<ISoundManager>().PlayPlayerHitSound();

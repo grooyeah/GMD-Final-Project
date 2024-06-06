@@ -73,13 +73,14 @@ public class UIManager : MonoBehaviour
     public void StartGame()
     {
         _startScreen.SetActive(false);
-
+        _startButton.Select();
         Time.timeScale = 1;
     }
 
     public void ShowHelp()
     {
         _helpPanel.SetActive(true);
+        _helpCloseButton.Select();
     }
 
     public void CloseHelp()
@@ -90,7 +91,7 @@ public class UIManager : MonoBehaviour
     public void EndGame()
     {
         _endScreen.SetActive(true);
-
+        _restartButton.Select();
         Time.timeScale = 0;
     }
 

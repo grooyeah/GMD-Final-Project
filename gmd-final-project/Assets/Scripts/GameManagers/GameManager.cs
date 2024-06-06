@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
@@ -89,6 +90,7 @@ public class GameManager : MonoBehaviour
         _enemyHealthBarManager.HideHealthBars();
         _restartButton.gameObject.SetActive(true);
         _gambleButton.gameObject.SetActive(true);
+        _restartButton.Select();
         Time.timeScale = 0;
     }
 
@@ -96,6 +98,7 @@ public class GameManager : MonoBehaviour
     {
         DeactivateButtons();
         _gambleComponent.SetActive(true);
+        _headsButton.Select();
     }
 
     private void SetPlayerChoice(string choice)
@@ -192,6 +195,12 @@ public class GameManager : MonoBehaviour
         _gambleResultText.text = "Pick your choice";
         _headsButton.gameObject.SetActive(true);
         _tailsButton.gameObject.SetActive(true);
+    }
+
+    private void OnApplicationExit(InputValue inputValue)
+    {
+        Debug.Log("THIS WOULD BE THE LEFT TRIGGER");    
+        Application.Quit();
     }
 }
 

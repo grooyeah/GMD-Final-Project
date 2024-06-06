@@ -52,7 +52,7 @@ public class MeleeParent : MonoBehaviour
             if (enemyHealth != null && enemyHealth.IsAlive())
             {
                 ServiceLocator.Instance.GetService<ISoundManager>().PlayEnemyHitSound();
-                enemyHealth.Damage(100);
+                enemyHealth.Damage(25);
                 PushBackEnemy(collision.transform);
             }
         }
