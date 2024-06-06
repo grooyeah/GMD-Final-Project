@@ -2,7 +2,7 @@
 
 ## Blogs Table of Contents
 
-- [Blog Post #1: Roll a Ball](../Blogs/Blog_Post_#1_Roll_a_Ball.md)
+- [Blog Post #1: Roll a Ball](/Blogs/Blog_Post_#1_Roll_a_Ball.md)
 - [Blog Post #2: Game Design Document](../Blogs/Blog_Post_#2_Game_Design_Document.md)
 - [Blog Post #3: Dev Update 1](../Blogs/Blog_Post_#3_Dev_Update_1.md)
 - [Blog Post #4: Dev Update 2](../Blogs/Blog_Post_#4_Dev_Update_2.md)
