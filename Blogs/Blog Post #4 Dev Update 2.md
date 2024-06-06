@@ -12,9 +12,9 @@ The logic for the enemies involve several actions. Regular enemies are placed ar
 
 The bosses in this game work as the final enemies before going to the next level. These would spawn only after all regular enemies are defeated. Spawning with more health and more damage to be dealt to the player, this entity brings a challenge at the end of a level. Pictures of the two types of enemies can be found in the table below.
 
-| Regular Enemy                         | Boss Enemy                        |
-| ------------------------------------- | --------------------------------- |
-| ![Regular Enemy](/pictures/Enemy.png) | ![Boss Enemy](/pictures/Boss.png) |
+| Regular Enemy                                 | Boss Enemy                                |
+| --------------------------------------------- | ----------------------------------------- |
+| ![Regular Enemy](../Blogs/pictures/Enemy.png) | ![Boss Enemy](../Blogs/pictures/Boss.png) |
 
 ## Level Additions and Logic
 

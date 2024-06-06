@@ -86,6 +86,7 @@ public class UIManager : MonoBehaviour
     public void CloseHelp()
     {
         _helpPanel.SetActive(false);
+        _helpButton.Select();
     }
 
     public void EndGame()
